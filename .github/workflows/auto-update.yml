@@ -1,0 +1,17 @@
+name: Auto Update từ Google Sheets
+on:
+  schedule:
+    - cron: '*/3 * * * *'   # cứ 3 phút chạy 1 lần
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cập nhật index.html (không cần vì dùng CSV trực tiếp)
+        run: |
+          echo "Đã tự động kiểm tra Google Sheets lúc $(date)"
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update from Google Sheets"
