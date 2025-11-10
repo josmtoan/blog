@@ -31,6 +31,77 @@
     const SETTINGS_GID = "0";
     const POSTS_GID = "1418524730"; // gid của sheet "posts"
     const PAGES_GID = "1043465413"; // gid của sheet "pages"
-
-    // Load settings
+// Load settings
     Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SETTINGS_GID}`, {
+      download: true,
+      header: true,
+      complete: (res) => {
+        const data = Object.fromEntries(res.data.map(r => [r.key, r.value]));
+        document.title = data.site_name;
+        document.getElementById("siteName").innerText = data.site_name;
+        document.getElementById("logo").innerHTML = `<img src="${data.logo}" alt="logo" class="h-10">`;
+        document.getElementById("favicon").href = data.favicon;
+      }
+    });
+
+    // Load posts cho trang chủ
+    if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
+      Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${POSTS_GID}`, {
+        download: true,
+        header: true,
+        complete: (res) => {
+          const posts = res.data.filter(p => p.published === "true");
+          const html = posts.map(p => `
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition">
+              <img src="${p.image}" alt="${p.title}" class="w-full h-64 object-cover">
+              <div class="p-6">
+                <h2 class="text-2xl font-bold mb-2">${p.title}</h2>
+                <p class="text-gray-600 mb-4">${p.content}</p>
+                <a href="/${p.slug}" class="text-pink-600 font-bold hover:underline">Xem chi tiết →</a>
+              </div>
+            </div>
+          `).join("");
+          document.getElementById("content").innerHTML = `<div class="grid md:grid-cols-3 gap-8">${html}</div>`;
+        }
+      });
+    }
+
+    // Load trang tĩnh (about, contact, chi tiết sản phẩm)
+    const slug = window.location.pathname.slice(1).replace(".html","");
+    if (slug && slug !== "index") {
+      Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${PAGES_GID}`, {
+        download: true,
+        header: true,
+        complete: (res) => {
+          const page = res.data.find(p => p.slug === slug) || res.data.find(p => p.slug === slug.replace(".html",""));
+          if (page) {
+            document.getElementById("content").innerHTML = `
+              <h1 class="text-4xl font-bold mb-6">${page.title}</h1>
+              <div class="prose max-w-none">${page.content.replace(/\\n/g, "<br>")}</div>
+            `;
+          }
+        }
+      });
+
+      // Load chi tiết bài viết nếu có trong sheet posts
+      Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${POSTS_GID}`, {
+        download: true,
+        header: true,
+        complete: (res) => {
+          const post = res.data.find(p => p.slug === slug);
+          if (post) {
+            document.getElementById("content").innerHTML = `
+              <article class="bg-white rounded-2xl shadow-xl p-8">
+                <img src="${post.image}" class="w-full h-96 object-cover rounded-xl mb-8">
+                <h1 class="text-4xl font-bold mb-4">${post.title}</h1>
+                <p class="text-gray-600 mb-8">${post.date}</p>
+                <div class="prose max-w-none text-lg leading-relaxed">${post.content.replace(/\\n/g, "<br>")}</div>
+              </article>
+            `;
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
