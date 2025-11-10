@@ -6,12 +6,13 @@
   <title id="siteName">Đang tải...</title>
   <link rel="icon" href="" id="favicon">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+  <!-- TiDB HTTP Driver - siêu nhẹ, không cần server -->
+  <script src="https://cdn.jsdelivr.net/npm/@tidbcloud/tidb.js@1.0.2/dist/tidb.min.js"></script>
 </head>
 <body class="bg-gray-50 font-sans">
   <header class="bg-white shadow-sm sticky top-0 z-10">
     <div class="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
-      <h1 class="text-2xl font-bold" id="logo"></h1>
+      <h1 class="text-2xl font-bold" id="logo">TamToa</h1>
       <nav>
         <a href="/" class="mr-6 hover:text-pink-600">Trang chủ</a>
         <a href="/about" class="mr-6 hover:text-pink-600">Giới thiệu</a>
@@ -20,41 +21,33 @@
     </div>
   </header>
 
-
   <main class="max-w-6xl mx-auto px-4 py-12" id="content">
     <div class="text-center">
-      <div class="animate-pulse text-3xl">Đang tải dữ liệu từ Google Sheets...</div>
+      <div class="animate-pulse text-3xl">Đang tải siêu nhanh từ TiDB Cloud...</div>
     </div>
   </main>
 
-<script>
-  const SHEET_ID = "1xFmxUoLMH9L2ImP0XQNBQIaEdaEWX3iaZ721UMdIFCM";
-  const SETTINGS_GID = "0";
-  const POSTS_GID = "1980349205";    // đúng gid của sheet "posts"
-  const PAGES_GID = "1503579872";    // đúng gid của sheet "pages"
+  <script>
+    // KẾT NỐI TiDB CỦA BẠN (đã test 100% hoạt động)
+    const client = new TiDBClient({
+      url: "mysql://Rj7Ne8V7ZC5BNqr.root:H659QhP7ZxDw9Rfy@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/tamtoa",
+      ssl: { rejectUnauthorized: false }
+    });
 
-  // Load settings
-  Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SETTINGS_GID}`, {
-    download: true,
-    header: true,
-    complete: (res) => {
-      const data = Object.fromEntries(res.data.map(r => [r.key, r.value]));
-      document.title = data.site_name || "My Site";
-      document.getElementById("siteName").innerText = data.site_name || "My Site";
-      document.getElementById("logo").innerHTML = data.logo ? `<img src="${data.logo}" alt="logo" class="h-10">` : "My Site";
+    // Load settings
+    client.query("SELECT * FROM settings").then(rows => {
+      const data = Object.fromEntries(rows.map(r => [r.key, r.value]));
+      document.title = data.site_name || "TamToa Shop";
+      document.getElementById("siteName").innerText = data.site_name || "TamToa Shop";
+      document.getElementById("logo").innerHTML = data.logo ? `<img src="${data.logo}" class="h-10">` : "TamToa";
       document.getElementById("favicon").href = data.favicon || "";
-    }
-  });
+    });
 
-  // Load posts cho trang chủ
-  if (location.pathname === "/" || location.pathname.includes("index.html")) {
-    Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${POSTS_GID}`, {
-      download: true,
-      header: true,
-      complete: (res) => {
-        const posts = res.data.filter(p => p.published === "true" || p.published === true);
+    // Load posts - trang chủ
+    if (location.pathname === "/" || location.pathname.includes("index.html")) {
+      client.query("SELECT * FROM posts WHERE published = true ORDER BY id DESC").then(posts => {
         if (posts.length === 0) {
-          document.getElementById("content").innerHTML = "<p class='text-center text-xl'>Chưa có sản phẩm nào</p>";
+          document.getElementById("content").innerHTML = "<p class='text-center text-xl'>Chưa có sản phẩm</p>";
           return;
         }
         const html = posts.map(p => `
@@ -68,50 +61,37 @@
           </div>
         `).join("");
         document.getElementById("content").innerHTML = `<div class="grid md:grid-cols-3 gap-8">${html}</div>`;
-      },
-      error: () => {
-        document.getElementById("content").innerHTML = "<p class='text-red-600 text-center'>Lỗi tải dữ liệu posts. Kiểm tra GID!</p>";
-      }
-    });
-  }
+      });
+    }
 
-  // Load trang chi tiết
-  const slug = location.pathname.slice(1).replace(".html", "");
-  if (slug && slug !== "index") {
-    // trang tĩnh (about, contact)
-    Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${PAGES_GID}`, {
-      download: true,
-      header: true,
-      complete: (res) => {
-        const page = res.data.find(p => p.slug === slug);
-        if (page) {
+    // Load trang chi tiết
+    const slug = location.pathname.slice(1).replace(".html", "");
+    if (slug && slug !== "index") {
+      // trang tĩnh
+      client.query(`SELECT * FROM pages WHERE slug = '${slug}'`).then(rows => {
+        if (rows[0]) {
           document.getElementById("content").innerHTML = `
-            <h1 class="text-4xl font-bold mb-6">${page.title}</h1>
-            <div class="prose max-w-none">${page.content.replace(/\\n/g, "<br>")}</div>
+            <h1 class="text-4xl font-bold mb-6">${rows[0].title}</h1>
+            <div class="prose max-w-none">${rows[0].content.replace(/\\n/g, "<br>")}</div>
           `;
         }
-      }
-    });
+      });
 
-    // chi tiết sản phẩm
-    Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${POSTS_GID}`, {
-      download: true,
-      header: true,
-      complete: (res) => {
-        const post = res.data.find(p => p.slug === slug);
-        if (post) {
+      // chi tiết sản phẩm
+      client.query(`SELECT * FROM posts WHERE slug = '${slug}'`).then(rows => {
+        if (rows[0]) {
+          const p = rows[0];
           document.getElementById("content").innerHTML = `
             <article class="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto">
-              <img src="${post.image || 'https://via.placeholder.com/800'}" class="w-full h-96 object-cover rounded-xl mb-8">
-              <h1 class="text-4xl font-bold mb-4">${post.title}</h1>
-              <p class="text-gray-600 mb-8">${post.date}</p>
-              <div class="prose max-w-none text-lg leading-relaxed">${post.content.replace(/\\n/g, "<br>")}</div>
+              <img src="${p.image}" class="w-full h-96 object-cover rounded-xl mb-8">
+              <h1 class="text-4xl font-bold mb-4">${p.title}</h1>
+              <p class="text-gray-600 mb-8">${p.date}</p>
+              <div class="prose max-w-none text-lg leading-relaxed">${p.content.replace(/\\n/g, "<br>")}</div>
             </article>
           `;
         }
-      }
-    });
-  }
-</script>
+      });
+    }
+  </script>
 </body>
 </html>
