@@ -28,9 +28,9 @@
 
   <script>
     const SHEET_ID = "1xFmxUoLMH9L2ImP0XQNBQIaEdaEWX3iaZ721UMdIFCM"; // ← THAY BẰNG ID CỦA BẠN
-    const SETTINGS_GID = "0";
-    const POSTS_GID = "1418524730"; // gid của sheet "posts"
-    const PAGES_GID = "1043465413"; // gid của sheet "pages"
+    const SETTINGS_GID = "1043465413";
+    const POSTS_GID = "0"; // gid của sheet "posts"
+    const PAGES_GID = "1418524730"; // gid của sheet "pages"
 // Load settings
     Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SETTINGS_GID}`, {
       download: true,
