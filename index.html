@@ -1,18 +1,36 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-<meta charset="utf-8">
-<title>Học web chuẩn</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title id="siteName">Đang tải...</title>
+  <link rel="icon" href="" id="favicon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
 </head>
-<body>
-  <section class="best-shared">
-    <p class="logo"><img src="/exercises/images/img_190x50.png" alt=""></p>
-    <h2>Best <strong>Shared Hosting</strong> Company</h2>
-    <p class="lead-text">With this responsive landing page template, you can promote your all hosting, domain and email services.</p>
-    <ul class="btn-list">
-      <li><a href="./">View Plans</a></li>
-      <li><a href="./">All Features</a></li>
-    </ul>
-  </section>
-</body>
-</html>
+<body class="bg-gray-50 font-sans">
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
+      <h1 class="text-2xl font-bold" id="logo"></h1>
+      <nav>
+        <a href="/" class="mr-6 hover:text-pink-600">Trang chủ</a>
+        <a href="/about" class="mr-6 hover:text-pink-600">Giới thiệu</a>
+        <a href="/contact" class="hover:text-pink-600">Liên hệ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-12" id="content">
+    <div class="text-center">
+      <div class="animate-pulse text-3xl">Đang tải dữ liệu từ Google Sheets...</div>
+    </div>
+  </main>
+
+  <script>
+    const SHEET_ID = "1A2b3C4d5E6f7G8h9I0j..."; // ← THAY BẰNG ID CỦA BẠN
+    const SETTINGS_GID = "0";
+    const POSTS_GID = "123456789"; // gid của sheet "posts"
+    const PAGES_GID = "987654321"; // gid của sheet "pages"
+
+    // Load settings
+    Papa.parse(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SETTINGS_GID}`, {
